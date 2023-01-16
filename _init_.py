@@ -1,9 +1,8 @@
-# coding=utf8
-# Autor : laitianliu
-# Time  : 2023/1/16 14:31
-# File  : harbor.py
-# Software PyCharm
-
+# -*- coding: utf-8 -*-
+# @Time : 2023/01/16 14:30
+# @Author : Mr Lai
+# @FileName: harbor_api.py
+# @Software: Pycharm
 import json
 import urllib3
 import requests
@@ -13,13 +12,14 @@ urllib3.disable_warnings()
 
 class HarborApi(object):
     def __init__(self, url, username, passwd, page_size, protocol="https"):
-        '''
+        """
         init the request
-        :param url: url address or doma
-        :param username:
-        :param passwd:
-        :param protect:
-        '''
+        :param url: IP Address
+        :param username: harbor username
+        :param passwd: harbor password
+        :param page_size: query page_size
+        :param protocol: http or https
+        """
         self.url = url
         self.username = username
         self.passwd = passwd
@@ -45,7 +45,7 @@ class HarborApi(object):
         if 200 == resp.status_code:
             return req_handle
         else:
-            raise Exception("Failed to get the project info。")
+            raise Exception('Failed to Parse  the request of the' + api_url + 'response。')
 
     def get_all_project(self):
         api_new = '/api/v2.0/projects?page=1&page_size=' + str(self.page_size) + '&with_detail=false'

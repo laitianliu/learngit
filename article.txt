@@ -1,0 +1,102 @@
+证书的几种文件扩展名
+证书文件扩展名是比较误导人的地方，我之前也一直没搞明白！
+
+如上所述，对于 X.509 标准的证书两种不同编码格式，一般采用 PEM 编码就以 .pem 作为文件扩展名，若采用 DER 编码，就应以 .der 作为扩展名。但常见的证书扩展名还包括 .crt、.cer、.p12 等，他们采用的编码格式可能不同，内容也有所差别，但大多数都能互相转换，现总结如下：
+
+.pem: 采用 PEM 编码格式的 X.509 证书的文件扩展名；
+.der: 采用 DER 编码格式的 X.509 证书的文件扩展名；
+.crt: 即 certificate 的缩写，常见于类 UNIX 系统，有可能是 PEM 编码，也有可能是 DER 编码，但绝大多数情况下此格式证书都是采用 PEM 编码；
+.cer: 也是 certificate 的缩写，常见于 Windows 系统，同样地，可能是 PEM 编码，也可能是 DER 编码，但绝大多数情况下此格式证书都是采用 DER 编码；
+.p12: 也写作 .pfx，全称：PKCS #12，是公钥加密标准（Public Key Cryptography Standards，PKCS）系列的一种，它定义了描述个人信息交换语法（Personal Information Exchange Syntax）的标准，可以用来将包含了公钥的 X.509 证书和证书对应的私钥以及其他相关信息打包，进行交换。简单理解：一份 .p12 文件 = X.509 证书+私钥；
+.csr: Certificate Signing Request 的缩写，即证书签名请求，它并不是证书的格式，而是用于向权威证书颁发机构（Certificate Authority, CA）获得签名证书的申请，其核心内容包含一个 RSA 公钥和其他附带信息，在生成这个 .csr 申请的时候，同时也会生成一个配对 RSA 私钥，私钥通常需要严格保存于服务端，不能外泄。
+.key: 通常用来存放一个 RSA 公钥或者私钥，它并非 X.509 证书格式，编码同样可能是 PEM，也可能是 DER，查看方式如下：
+     
+     
+      PEM 编码格式：openssl rsa -in xxx.key -text -noout 
+
+      DER 编码格式：openssl rsa -in xxx.key -text -noout -inform der
+     
+以上。
+
+在下一篇博文，我将详细地介绍 iOS 开发中遇到的 HTTPS、SSL/TLS 握手、RSA 加密/解密、数字证书的 CA 签发与校验过程、中间人攻击、SSL Pinning 与 HTTPS 双向验证等技术的概念与实现。
+
+
+
+
+openssl genrsa -out my.key 2048
+openssl req -new -key my.key -out my.csr -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+openssl req -new -newkey rsa:2048 -nodes -keyout my.key -out my.csr -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+
+---------
+
+openssl genrsa -out my.key 2048
+openssl req -new -key my.key -out my.csr -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+openssl req -new -newkey rsa:2048 -nodes -keyout my.key -out my.csr -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+openssl x509 -req -in my.csr -out my.crt -signkey my.key -days 3650
+
+openssl req -x509 -newkey rsa:2048 -nodes -keyout my.key -out my.crt -days 3650  -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+
+--------
+
+openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -days 3650  -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+
+
+openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj "/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"
+
+
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650
+
+
+openssl verify -CAfile ca.crt server.crt
+
+
+
+-days <n>
+指定证书有效期，默认是30天，与 -x509 选项一起使用
+
+-newkey rsa:2048
+生成一个新的证书申请，同时生成一个 2048 位的 RSA 私钥
+
+-keyout <keyfile>
+新私钥要写入的文件
+
+-nodes
+不对新私钥加密
+
+-key <keyfile>
+读取指定的私钥文件.
+
+-text
+同时打印纯文本版本和编码版本信息
+
+-noout
+不打印编码后版本 (BASE64编码)
+
+-new
+生成一个新的证书申请，会提示用户输入相关字段的值，如果没有 -key 选项，会使用指定配置文件中的信息生成一个新的 RSA 私钥.
+
+-x509
+输出自签名的证书，而不是请求一个证书. 通常用于生成测试证书或自签名的根证书.
+
+-subj <arg>
+申请人信息，格式是 /C=CN/O=Corp/.../CN=www.ez.com，可以使用 \ 转义，不会跳过空格.
+
+-[digets] 指定签署请求时使用的信息摘要算法，如 -md5，-sha1，-sha256
+
+
+
+
+
+/C= Country 国家
+/ST= State or Province 省
+/L= Location or City 城市
+/O= Organization 组织或企业
+/OU= Organization Unit 部门
+/CN= Common Name 域名或IP
+

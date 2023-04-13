@@ -100,3 +100,4 @@ openssl verify -CAfile ca.crt server.crt
 /OU= Organization Unit 部门
 /CN= Common Name 域名或IP
 
+https://blog.csdn.net/bluishglc/article/details/123617558

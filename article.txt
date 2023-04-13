@@ -101,3 +101,5 @@ openssl verify -CAfile ca.crt server.crt
 /CN= Common Name 域名或IP
 
 https://blog.csdn.net/bluishglc/article/details/123617558
+
+https://kangzubin.com/certificate-format/?utm_source=tuicool&utm_medium=referral

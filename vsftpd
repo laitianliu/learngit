@@ -1,0 +1,127 @@
+https://cloud.tencent.com/developer/article/1447057
+
+
+local
+# 运行匿名用户模式
+anonymous_enable=NO
+local_enable=YES
+
+# 基础设定
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+xferlog_std_format=YES
+listen=NO
+listen_ipv6=YES
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+
+# 锁定主目录
+chroot_local_user=YES
+# 设定登陆主目录
+local_root=/home
+# 允许用户对于主目录具有读写权限
+allow_writeable_chroot=YES
+
+# 被动
+pasv_enable=YES
+pasv_min_port=12000
+pasv_max_port=12199
+
+
+3.3. 用户管理
+重难点
+
+如果新建用户不指定用户主目录，则需要返回3.2. 目录管理创建对应主目录和权限。
+用户推荐nologin模式，这样可以放置用户登陆系统。
+使用nologin模式后，还需允许nologin用户登陆FTP
+# 新建用户
+useradd -s /sbin/nologin -d /home/FTP/admin admin
+passwd admin
+
+# 禁止用户登陆(可跳过)
+usermod -s /sbin/nologin admin
+
+# 更改用户配置(可跳过)
+usermod -s /bin/bash admin
+usermod -d /home/FTP/admin admin
+
+# 允许 nologin 用户登陆FTP
+sed -i '$a /sbin/nologin' /etc/shells 
+
+cat /etc/shells
+[root@ftp home]# cat /etc/shells
+/bin/sh
+/bin/bash
+/usr/bin/sh
+/usr/bin/bash
+/bin/tcsh
+/bin/csh
+/sbin/nologin
+
+3.4. 权限配置
+使用ll命令可以方便的查看系统文件目录的权限
+
+[root@centos_7 home]# ll
+总用量 0
+
+drwx------. 3 nandi nandi 78 7月  16 09:10 nandi
+-rwxrw-r--. 1 root  root   0 7月  16 09:45 readme
+drwx------. 3 test  test  78 7月  16 09:09 test
+
+上面的信息解读：
+
+以readme为例，可以看到其所属用户为root（第一个表示用户），所属用户组为root（第二个表示组）
+-rw-r--r--，一共10个字符，可以分为四段来解读：字符长度为1-3-3-3
+第一段：d 表示nandi和test是目录，- 表示 readme 是文件
+第二段：rwx，对于二进制码111，十进制为7，表示所属用户对于该文件（夹）具有读r写w执行x的权限。
+第三段：rw-，对于二进制码110，十进制为6，表示所属用户对于该文件（夹）具有读r写w的权限。
+第四段：r--，对于二进制码100，十进制为4，表示所属用户对于该文件（夹）具有读r的权限。
+掌握规则以后，我们要改变权限也简单了
+
+试验：
+目的：将readme权限更改为:700
+分析：700对应二进制111000000，对应权限为rwx------，由于他本身是文件，所以第一个符号是-，完整的权限为-rwx------
+代码：
+
+[root@centos_7 home]# chmod -R 700 readme 
+[root@centos_7 home]# ll
+总用量 0
+drwx------. 3 nandi nandi 78 7月  16 09:10 nandi
+-rwx------. 1 root  root   0 7月  16 09:45 readme
+drwx------. 3 test  test  78 7月  16 09:09 test
+
+3.5. 登陆
+# 重启服务
+systemctl restart vsftpd
+
+# 查询服务器IP
+ip addr
+
+# 登陆
+ftp://192.168.210.201/
+
+3.6. 用户配置文件（可选）
+上一步完成以后，就已经成功完成FTP服务器的搭建，但是由于所有本地用户共用一个配置文件，导致很多配置不能根据不同用户的需求来灵活配置。比如，我们想针对不同用户建立不同的根目录，这时用户配置文件就能起到作用：
+
+启用用户配置目录
+在/etc/vsftpd/vsftpd.conf里面添加语句
+
+# 启用用户配置目录
+user_config_dir=/etc/vsftpd/user_conf
+
+
+# 建立用户配置目录
+mkdir -p /etc/vsftpd/user_conf
+
+建立用户配置文件
+
+vim /etc/vsftpd/user_conf/test
+
+# 设定登陆主目录
+local_root=/home/test
+
+如此反复，注意用户配置文件名和用户名要一样，重启服务以后，不同用户登陆就会进入到各自的根目录当中。
